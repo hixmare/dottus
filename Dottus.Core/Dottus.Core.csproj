@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="OpenTK.NetStandard" Version="1.0.4" />
+        <PackageReference Include="System.Memory" Version="4.5.1" />
+        <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.1" />
+    </ItemGroup>
+</Project>
