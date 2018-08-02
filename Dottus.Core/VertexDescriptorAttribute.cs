@@ -15,14 +15,14 @@ namespace Dottus.Core
         public VertexDescriptorAttribute(Type stride, params Type[] offsets)
         {
             Stride = Marshal.SizeOf(stride);
-            Offsets = offsets == null ? null : (from offset in offsets select Marshal.SizeOf(offset)).ToArray();
+            Offsets = offsets.Length == 0 ? null : (from offset in offsets select Marshal.SizeOf(offset)).ToArray();
         }
 
         public VertexAttribute ToVertexAttribute(
             Int32 index = 0,
             Int32 offset = 0,
             VertexAttribPointerType type = VertexAttribPointerType.Float,
-            Boolean isNormalized = false) => ToVertexAttribute(Stride, index, offset, type, isNormalized);
+            Boolean isNormalized = false) => ToVertexAttribute(index, Stride, offset, type, isNormalized);
 
         public VertexAttribute ToVertexAttribute(
             Int32 index,
@@ -45,12 +45,21 @@ namespace Dottus.Core
             VertexAttribPointerType type = VertexAttribPointerType.Float,
             Boolean isNormalized = false)
         {
-            var array = new VertexAttribute[Offsets.Length];
-
-            for (int i = 0, offset = 0; i < array.Length; i++)
+            VertexAttribute[] array;
+            if (Offsets == null)
             {
-                array[i] = ToVertexAttribute(i, Offsets[i], offset, type, isNormalized);
-                offset += Offsets[i];
+                array = new VertexAttribute[1];
+                array[0] = ToVertexAttribute(0, 0, type, isNormalized);
+            }
+            else
+            {
+                array = new VertexAttribute[Offsets.Length];
+
+                for (int i = 0, offset = 0; i < array.Length; i++)
+                {
+                    array[i] = ToVertexAttribute(i, Offsets[i], offset, type, isNormalized);
+                    offset += Offsets[i];
+                }
             }
             return array;
         }

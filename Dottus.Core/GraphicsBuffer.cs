@@ -8,9 +8,8 @@ namespace Dottus.Core
 {
     public class GraphicsBuffer
     {
-        internal IntPtr Data { get; set; }
-
-        protected Int32 Id { get; set; }
+        protected internal Int32 Id { get; protected set; }
+        protected internal IntPtr Data { get; protected set; }
 
         public BufferTarget Target { get; }
         public BufferAccessMask AccessMask { get; }
@@ -39,6 +38,8 @@ namespace Dottus.Core
 
             Allocate();
         }
+
+        ~GraphicsBuffer() => GL.DeleteBuffer(Id);
 
         public void Allocate()
         {
@@ -79,13 +80,23 @@ namespace Dottus.Core
         public T Peek<T>() where T : struct
         {
             if (IsEndOfBuffer) { throw new InvalidOperationException("End of buffer"); }
-            unsafe { return Unsafe.Read<T>((void*)(Data + Cursor * Unsafe.SizeOf<T>())); }
+            unsafe { return Unsafe.Read<T>((void*)(Data + Cursor)); }
+        }
+
+        public ReadOnlySpan<T> Peek<T>(Int32 count) where T : struct
+        {
+            var sizeOfT = Unsafe.SizeOf<T>();
+            unsafe
+            {
+                var result = new ReadOnlySpan<T>((void*)(Data + Cursor), count * sizeOfT);
+                return result;
+            }
         }
 
         public Byte Read()
         {
             if (IsEndOfBuffer) { throw new InvalidOperationException("End of buffer"); }
-            return this[Cursor];
+            return this[Cursor++];
         }
 
         public T Read<T>(out Int32 advanced) where T : struct
@@ -99,13 +110,9 @@ namespace Dottus.Core
         public ReadOnlySpan<T> Read<T>(Int32 count, out Int32 advanced) where T : struct
         {
             if (count <= 0 || Cursor + count >= Length) { throw new ArgumentOutOfRangeException(nameof(count)); }
-            var sizeOfT = Unsafe.SizeOf<T>();
-            unsafe
-            {
-                var result = new ReadOnlySpan<T>((void*)(Data + Cursor * sizeOfT), count * sizeOfT);
-                advanced = count * sizeOfT;
-                return result;
-            }
+            var result = Peek<T>(count);
+            Cursor += (advanced = count * Unsafe.SizeOf<T>());
+            return result;
         }
 
         public void Seek(Int32 index)
@@ -117,14 +124,15 @@ namespace Dottus.Core
         public void Write(Byte value)
         {
             if (IsEndOfBuffer) { Reallocate(Length * 2); }
-            this[Cursor] = value;
+            this[Cursor++] = value;
         }
 
         public Int32 Write<T>(T value) where T : struct
         {
             if (IsEndOfBuffer) { Reallocate(Length * 2); }
             var sizeOfT = Unsafe.SizeOf<T>();
-            unsafe { Unsafe.Write<T>((void*)(Data + Cursor * sizeOfT), value); }
+            unsafe { Unsafe.Write<T>((void*)(Data + Cursor), value); }
+            Cursor += sizeOfT;
             return sizeOfT;
         }
 
@@ -139,11 +147,16 @@ namespace Dottus.Core
             var sizeOfT = Unsafe.SizeOf<T>();
             unsafe
             {
-                var dest = new Span<T>((void*)(Data + Cursor * sizeOfT), values.Length);
+                var dest = new Span<T>((void*)(Data + Cursor), values.Length);
                 values.CopyTo(dest);
+                Cursor += values.Length * sizeOfT;
                 return values.Length * sizeOfT;
             }
         }
+
+        public T Get<T>(Int32 index) where T : struct { unsafe { return Unsafe.Read<T>((void*)(Data + Cursor)); } }
+
+        public void Set<T>(Int32 index, T value) where T : struct { unsafe { Unsafe.Write<T>((void*)(Data + Cursor), value); } }
 
         public Byte this[Int32 index]
         {

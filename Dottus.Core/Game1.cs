@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using OpenTK;
 using OpenTK.Graphics;
@@ -8,17 +9,24 @@ namespace Dottus.Core
 {
     public class Game1 : GameWindow
     {
+        GraphicsBuffer Buffer;
+        ShaderProgram Program;
+        VertexAttributeArray Array;
+
         public Game1() : base(
             600, 600, new GraphicsMode(32, 0, 0, 4), "", GameWindowFlags.Default,
             DisplayDevice.Default, 4, 2, GraphicsContextFlags.Default)
-        { }
+        {
+            GL.Viewport(ClientRectangle);
+        }
 
         protected override void OnLoad(EventArgs e)
         {
+            base.OnLoad(e);
             GL.Enable(EnableCap.DebugOutput);
             GL.DebugMessageCallback((source, type, id, severity, length, message, userParam) =>
             {
-                Console.WriteLine("OpenGL Debugger",
+                Console.WriteLine("OpenGL Debugger" +
                     $"\n  Id : {userParam} :: {id}\n" +
                     $"  Source : {source}\n" +
                     $"  Type : {type}\n" +
@@ -28,14 +36,45 @@ namespace Dottus.Core
             }, IntPtr.Zero);
             GL.ClearColor(Color.CornflowerBlue);
 
-            var buffer = new GraphicsBuffer(BufferTarget.ArrayBuffer);
-            buffer.Write(new ColoredVertex(0, 1, 2, Color4.Blue));
-            unsafe
-            {
-                var transpose = new Span<Single>((void*)buffer.Data, buffer.Length);
-            }
-            var attribs = typeof(ColoredVertex).DescribeVertexAttributes();
-            ;
+            Buffer = new GraphicsBuffer(BufferTarget.ArrayBuffer);
+            Buffer.Write<Single>(new[] {
+                0, 0.5f, 0, 1, 0, 0, 1,
+                -0.5f, -0.5f, 0, 0, 1, 0, 1,
+                0.5f, -0.5f, 0, 0, 0, 1, 1,
+            });
+
+            Program = new ShaderProgram(new[]{
+                new Shader(
+                    ShaderType.VertexShader,
+                    File.ReadAllText(
+                        Path.Combine(Environment.CurrentDirectory, "content", "coloredvec3.vert"))
+                ),
+                new Shader(
+                    ShaderType.FragmentShader,
+                    File.ReadAllText(
+                        Path.Combine(Environment.CurrentDirectory, "content", "coloredvec3.frag"))
+                ),
+            });
+
+            GL.UseProgram(Program.Id);
+
+            Array = new VertexAttributeArray(Buffer, typeof(ColoredVertex).DescribeVertexAttributes());
+
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
+            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.CullFace);
+        }
+
+        protected override void OnRenderFrame(FrameEventArgs e)
+        {
+            base.OnRenderFrame(e);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            GL.UseProgram(Program.Id);
+            GL.BindVertexArray(Array.Id);
+
+            GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+            SwapBuffers();
         }
     }
 }

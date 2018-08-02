@@ -12,11 +12,11 @@ namespace Dottus.Core
         public Single B { get; }
         public Single A { get; }
         /* Control */
-        public Color4 ARGB => new Color4((Byte)A, (Byte)R, (Byte)G, (Byte)B);
+        public Color4 ARGB => new Color4(A, R, G, B);
 
         /* Constructors */
-        public Color4(Byte value, Byte a = Byte.MaxValue) : this(value, value, value, a) { }
-        public Color4(Byte r, Byte g, Byte b, Byte a = Byte.MaxValue)
+        public Color4(Single value, Single a = 1.0f) : this(value, value, value, a) { }
+        public Color4(Single r, Single g, Single b, Single a = 1.0f)
         {
             R = r;
             G = g;
@@ -35,7 +35,6 @@ namespace Dottus.Core
         public static Boolean operator ==(Color4 c1, Color4 c2) => c1.Equals(c2);
         public static Boolean operator !=(Color4 c1, Color4 c2) => !c1.Equals(c2);
         /* Casting operators */
-        public static implicit operator Color(Color4 color) => Color.FromArgb((Byte)color.A, (Byte)color.R, (Byte)color.G, (Byte)color.B);
         public static implicit operator Color4(Color color) => new Color4(color.R, color.G, color.B, color.A);
         /* Constants: Built-in colors */
         public static readonly Color4 AliceBlue = Color.AliceBlue;
