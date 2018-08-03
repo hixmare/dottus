@@ -45,7 +45,7 @@ Buffer.Write(Vector3.Zero);
 /* Return to 0 */
 Buffer.Seek(0);
 /* And read the data, or just take a peek */
-var b = Buffer.Read()
+var b = Buffer.Read();
 var v = Buffer.Read<Vector3>(out var advanced);
 var vm = Buffer.Peek<Vector3>(2, out var _); // Take care, this is a Span<T>
 ```
@@ -83,6 +83,7 @@ Program = new ShaderProgram(new []{
 });
 ```
 
-    Note 1: You need to Array.EnableAttributes() every time your Buffer is resized or reallocated, so the new location is visible for the vertex array.
+### Notes
+1. You need to Array.EnableAttributes() every time your Buffer is resized or reallocated, so the new location is visible for the vertex array.
 
-    Note 2: The OpenGL object id is actually protected internal, and there are no methods for drawing or exposing any of they attributes yet (they will be implemented soon). The recommended way to get it working is to inherit the corelib classes and provide methods.
+2. The OpenGL object id is actually protected internal, and there are no methods for drawing or exposing any of they attributes yet (they will be implemented soon). The recommended way to get it working is to inherit the corelib classes and provide methods.
